@@ -37,7 +37,7 @@ PyTorch training → ONNX export → ONNX Runtime inference → API service → 
 
 The same ONNX model can switch execution providers (CPU, CUDA, TensorRT) with a single line change, no model modification needed.
 
-## Usage
+## Usage (Development)
 
 ```bash
 cp .env.example .env
@@ -53,6 +53,17 @@ Run the benchmark:
 ```bash
 python -m src.benchmark --frames 50
 ```
+
+## Usage (Production)
+
+Requires `models/yolov8s.onnx` to exist locally first (run `yolo export model=yolov8s.pt format=onnx opset=17` and move the output into `models/`).
+
+```bash
+docker build -t traffic-detection .
+docker run -p 8002:8000 --env HLS_URL="your_stream_url" traffic-detection
+```
+
+Open `http://localhost:8002` to view the live detection feed. This image is fully self contained; the model and code are baked in, only the stream URL is passed at runtime.
 
 ## Known Limitations
 
