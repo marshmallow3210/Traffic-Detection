@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+models/
+sample_images/*.jpg
+sample_images/*.png
+*.onnx
+.DS_Store
+.env
+*.env
+.env
+yolov8s.pt

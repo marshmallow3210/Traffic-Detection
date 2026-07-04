@@ -1,0 +1,18 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - hf-cache:/root/.cache/huggingface
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true
+    command: bash
+
+volumes:
+  hf-cache:
