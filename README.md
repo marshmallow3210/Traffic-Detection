@@ -63,6 +63,9 @@ cp .env.example .env
 
 Open `.env` and replace the placeholder with a real HLS stream URL.
 
+> **Note:** `.env` is loaded when the container starts. If you edit it after
+> starting the container, exit and re-run it for changes to take effect.
+
 Step 2. On your host machine, start the dev container.
 
 ```bash
@@ -70,6 +73,8 @@ docker compose -f docker-compose.dev.yml run -p 8001:8000 dev
 ```
 
 This drops you into a shell inside the container.
+
+> **Note:** If port 8001 is already in use, pick another one, e.g. `-p 8003:8000`.
 
 Step 3. Inside the container, export the ONNX model. This only needs to run once.
 
