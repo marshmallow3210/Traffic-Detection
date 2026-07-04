@@ -3,11 +3,7 @@ __pycache__/
 .venv/
 venv/
 models/
-
-
 *.onnx
 .DS_Store
-.env
-*.env
 .env
 yolov8s.pt
