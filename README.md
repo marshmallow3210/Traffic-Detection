@@ -1,3 +1,5 @@
+![CI](https://github.com/marshmallow3210/Traffic-Detection/actions/workflows/ci.yml/badge.svg)
+
 # Traffic-Detection
 
 Real-time object detection on live Taipei city traffic camera streams using YOLOv8s ONNX Runtime, served via FastAPI and containerized with Docker.
@@ -19,7 +21,9 @@ Real-time object detection on live Taipei city traffic camera streams using YOLO
 
 ![benchmark](sample_images/benchmark.png)
 
-ONNX Runtime runs **2.59x faster** than PyTorch on CPU (avg 99ms vs 257ms per frame), with no loss in detection accuracy. This gap is expected to widen further on edge hardware with TensorRT.
+ONNX Runtime runs **~3x faster** than PyTorch on CPU (avg 78ms vs 246ms per frame, ranging 2.75x to 3.45x across 5 runs). It also uses about 40% less additional memory (154MB vs 267MB), which matters on memory-constrained edge devices. This gap is expected to widen further with TensorRT on edge hardware.
+
+Timing covers the full per-frame pipeline (preprocess + inference + postprocess), with 10 warmup frames excluded. Both frameworks run on identical input frames captured from the live stream. Measured on MacBook Air (M5, 32GB) inside a Docker container (linux/arm64), CPU execution only.
 
 ## Pipeline
 
@@ -36,6 +40,18 @@ PyTorch training → ONNX export → ONNX Runtime inference → API service → 
 ```
 
 The same ONNX model can switch execution providers (CPU, CUDA, TensorRT) with a single line change, no model modification needed.
+
+## Getting a Stream URL
+
+This project uses Taipei City's public traffic cameras.
+
+1. Open https://its.taipei.gov.tw and pick an intersection camera
+2. Open browser DevTools (F12) → Network tab, filter by `m3u8`
+3. Play the stream, copy the `.m3u8` request URL
+4. Paste it into `.env` as `HLS_URL=...`
+
+Note: stream URLs contain a token and expire after some time.
+If the app logs "Unable to start streaming", re-extract a fresh URL.
 
 ## Setup (Development)
 
@@ -58,6 +74,7 @@ This drops you into a shell inside the container.
 Step 3. Inside the container, export the ONNX models. This only needs to run once.
 
 ```bash
+mkdir -p models
 yolo export model=yolov8s.pt format=onnx opset=17
 mv yolov8s.onnx models/
 ```
@@ -65,7 +82,6 @@ mv yolov8s.onnx models/
 Step 4. Inside the container, load the stream URL and start the service.
 
 ```bash
-export HLS_URL=$(grep HLS_URL .env | cut -d= -f2)
 python -m src.stream
 ```
 
@@ -105,6 +121,6 @@ Only the stream URL is passed at runtime. No further setup is needed.
 ## Known Limitations
 
 - Motorcycle and bicycle detection is unreliable at overhead angles due to domain shift from COCO training data. Riders are often classified as person when viewed from above. Fine tuning on local traffic footage would improve this.
-- Inference runs on CPU only. Switching to `TensorrtExecutionProvider` on Jetson would reduce latency from about 90ms to under 10ms.
+- Inference runs on CPU only. Switching to `TensorrtExecutionProvider` on Jetson would reduce latency from about 78ms to under 10ms.
 - Stream URL may expire and require re extraction from browser DevTools.
 - NMS occasionally leaves overlapping boxes on the same object (e.g. two bus boxes on one vehicle). Tuning `NMS_IOU` in `src/stream.py` may help.

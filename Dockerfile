@@ -14,7 +14,7 @@ COPY models/ ./models/
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/feed')" || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 CMD ["python", "-m", "src.stream"]

@@ -1,17 +1,16 @@
-import io
 import os
 import time
 import threading
 import cv2
 import numpy as np
 import onnxruntime as ort
-from datetime import datetime, timezone, timedelta
-TAIPEI = timezone(timedelta(hours=8))
-from PIL import Image
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, Response
+from datetime import datetime, timezone, timedelta
 
+TAIPEI = timezone(timedelta(hours=8))
+LOCATION_NAME = os.environ.get("LOCATION_NAME", "Taipei Intersection")
 HLS_URL = os.environ.get("HLS_URL", "")  # 設定在 .env 或環境變數
 ONNX_PATH = "/app/models/yolov8s.onnx"
 INPUT_SIZE = (640, 640)
@@ -34,7 +33,7 @@ COLORS = {
 }
 
 app = FastAPI()
-state = {"frame": b"", "stats": "等待中..."}
+state = {"frame": b"", "stats": "等待中...", "detections": [], "updated_at": None}
 
 def preprocess(frame_bgr):
     h, w = frame_bgr.shape[:2]
@@ -143,6 +142,12 @@ def inference_loop():
                 _, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 82])
                 state["frame"] = buf.tobytes()
                 state["stats"] = summary or "無目標"
+                state["detections"] = [
+                    {"label": label, "confidence": round(conf, 3),
+                    "box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}}
+                    for label, conf, (x1, y1, x2, y2) in dets
+                ]
+                state["updated_at"] = datetime.now(TAIPEI).isoformat()
 
             cap.release()
         except Exception as e:
@@ -152,8 +157,25 @@ def inference_loop():
 @app.get("/feed")
 def feed():
     if not state["frame"]:
-        return Response("等待中...", media_type="text/plain")
+        return Response("stream not ready", media_type="text/plain", status_code=503)
     return Response(state["frame"], media_type="image/jpeg")
+
+@app.get("/detect")
+def detect():
+    return {
+        "updated_at": state["updated_at"],
+        "count": len(state["detections"]),
+        "detections": state["detections"],
+    }
+
+@app.get("/health")
+def health():
+    if state["updated_at"] is None:
+        return Response("no frames yet", status_code=503)
+    age = (datetime.now(TAIPEI) - datetime.fromisoformat(state["updated_at"])).total_seconds()
+    if age > 60:
+        return Response(f"stale: last frame {age:.0f}s ago", status_code=503)
+    return {"status": "ok", "last_frame_age_sec": round(age, 1)}
 
 @app.get("/stats")
 def stats():
@@ -174,7 +196,7 @@ def index():
       </style>
     </head>
     <body>
-      <h2>🚦 133-松高松智路口 即時偵測 (YOLOv8s ONNX)</h2>
+      <h2>🚦 {LOCATION_NAME} 即時偵測 (YOLOv8s ONNX)</h2>
       <img id="feed" src="/feed"/>
       <div class="legend">
         <span class="dot" style="background:#00ff00"></span>person　
