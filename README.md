@@ -37,36 +37,75 @@ PyTorch training → ONNX export → ONNX Runtime inference → API service → 
 
 The same ONNX model can switch execution providers (CPU, CUDA, TensorRT) with a single line change, no model modification needed.
 
-## Usage (Development)
+## Setup (Development)
+
+Step 1. On your host machine, set up the stream URL.
 
 ```bash
 cp .env.example .env
+```
+
+Open `.env` and replace the placeholder with a real HLS stream URL.
+
+Step 2. On your host machine, start the dev container.
+
+```bash
 docker compose -f docker-compose.dev.yml run -p 8001:8000 dev
+```
+
+This drops you into a shell inside the container.
+
+Step 3. Inside the container, export the ONNX models. This only needs to run once.
+
+```bash
+python -m src.export_onnx
+yolo export model=yolov8s.pt format=onnx opset=17
+mv yolov8s.onnx models/
+```
+
+Step 4. Inside the container, load the stream URL and start the service.
+
+```bash
 export HLS_URL=$(grep HLS_URL .env | cut -d= -f2)
 python -m src.stream
 ```
 
-Open `http://localhost:8001` to view the live detection feed.
+Step 5. On your host machine, open a browser.
 
-Run the benchmark:
+```
+http://localhost:8001
+```
+
+Run the benchmark (inside the container, after step 3):
 
 ```bash
 python -m src.benchmark --frames 50
 ```
 
-## Usage (Production)
+## Setup (Production)
 
-Requires `models/yolov8s.onnx` to exist locally first (run `yolo export model=yolov8s.pt format=onnx opset=17` and move the output into `models/`).
+This builds a self contained image with the model and code baked in.
+
+Step 1. Make sure `models/yolov8s.onnx` exists locally (produced in the Development steps above).
+
+Step 2. On your host machine, build and run the image.
 
 ```bash
 docker build -t traffic-detection .
 docker run -p 8002:8000 --env HLS_URL="your_stream_url" traffic-detection
 ```
 
-Open `http://localhost:8002` to view the live detection feed. This image is fully self contained; the model and code are baked in, only the stream URL is passed at runtime.
+Step 3. On your host machine, open a browser.
+
+```
+http://localhost:8002
+```
+
+Only the stream URL is passed at runtime. No further setup is needed.
 
 ## Known Limitations
 
 - Motorcycle and bicycle detection is unreliable at overhead angles due to domain shift from COCO training data. Riders are often classified as person when viewed from above. Fine tuning on local traffic footage would improve this.
 - Inference runs on CPU only. Switching to `TensorrtExecutionProvider` on Jetson would reduce latency from about 90ms to under 10ms.
 - Stream URL may expire and require re extraction from browser DevTools.
+- NMS occasionally leaves overlapping boxes on the same object (e.g. two bus boxes on one vehicle). Tuning `NMS_IOU` in `src/stream.py` may help.
