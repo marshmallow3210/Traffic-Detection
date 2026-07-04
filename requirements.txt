@@ -13,3 +13,4 @@ requests>=2.31
 matplotlib>=3.8
 psutil>=5.9
 onnxscript>=0.1
+onnxslim>=0.1.82
