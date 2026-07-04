@@ -3,8 +3,8 @@ __pycache__/
 .venv/
 venv/
 models/
-sample_images/*.jpg
-sample_images/*.png
+
+
 *.onnx
 .DS_Store
 .env
