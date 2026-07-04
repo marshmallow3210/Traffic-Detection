@@ -178,12 +178,12 @@ def index():
       <h2>🚦 133-松高松智路口 即時偵測 (YOLOv8s ONNX)</h2>
       <img id="feed" src="/feed"/>
       <div class="legend">
-        <span class="dot" style="background:lime"></span>person　
-        <span class="dot" style="background:cyan"></span>bicycle　
-        <span class="dot" style="background:orange"></span>motorcycle　
-        <span class="dot" style="background:yellow"></span>car　
-        <span class="dot" style="background:blue"></span>truck　
-        <span class="dot" style="background:magenta"></span>bus
+        <span class="dot" style="background:#00ff00"></span>person　
+        <span class="dot" style="background:#ffff00"></span>bicycle　
+        <span class="dot" style="background:#ffa500"></span>motorcycle　
+        <span class="dot" style="background:#00ffff"></span>car　
+        <span class="dot" style="background:#ff0000"></span>truck　
+        <span class="dot" style="background:#ff00ff"></span>bus
       </div>
       <div id="stats">偵測中...</div>
       <script>
