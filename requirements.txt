@@ -1,5 +1,3 @@
-torch>=2.0
-transformers>=4.37
 onnx>=1.15
 onnxruntime>=1.17
 pillow>=10.0
@@ -12,5 +10,5 @@ ultralytics>=8.1
 requests>=2.31
 matplotlib>=3.8
 psutil>=5.9
-onnxscript>=0.1
-onnxslim>=0.1.82
+pytest>=8.0
+httpx>=0.27

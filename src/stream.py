@@ -1,6 +1,5 @@
 import io
 import os
-import os
 import time
 import threading
 import cv2

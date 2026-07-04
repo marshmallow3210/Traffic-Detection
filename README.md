@@ -58,7 +58,6 @@ This drops you into a shell inside the container.
 Step 3. Inside the container, export the ONNX models. This only needs to run once.
 
 ```bash
-python -m src.export_onnx
 yolo export model=yolov8s.pt format=onnx opset=17
 mv yolov8s.onnx models/
 ```
