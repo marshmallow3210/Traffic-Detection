@@ -19,7 +19,7 @@ WARMUP = 10
 
 
 def grab_frames(n):
-    print(f"從串流抓取 {n} 幀...")
+    print(f"Grabbing {n} frames from stream...")
     cap = cv2.VideoCapture(HLS_URL)
     frames = []
     while len(frames) < n:
@@ -28,12 +28,12 @@ def grab_frames(n):
             break
         frames.append(frame)
     cap.release()
-    print(f"取得 {len(frames)} 幀")
+    print(f"Got {len(frames)} frames")
     return frames
 
 
 def benchmark_onnx(frames):
-    print("ONNX Runtime 推論中...")
+    print("Running ONNX Runtime inference...")
     gc.collect()
     proc = psutil.Process()
     mem_before = proc.memory_info().rss / 1024 / 1024
@@ -60,7 +60,7 @@ def benchmark_onnx(frames):
 
 
 def benchmark_pytorch(frames):
-    print("PyTorch 推論中...")
+    print("Running PyTorch inference...")
     gc.collect()
     proc = psutil.Process()
     mem_before = proc.memory_info().rss / 1024 / 1024
@@ -103,21 +103,21 @@ def plot(onnx_times, pt_times, onnx_mem, pt_mem, n):
     out_path = "/app/sample_images/benchmark.png"
     plt.tight_layout()
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
-    print(f"圖表已存到 {out_path}")
+    print(f"Chart saved to {out_path}")
 
 
 def main(n):
     frames = grab_frames(n)
     if not frames:
-        print("無法取得幀，請確認 HLS_URL 環境變數")
+        print("No frames captured. Check the HLS_URL environment variable.")
         return
     onnx_times, onnx_mem = benchmark_onnx(frames)
     pt_times, pt_mem = benchmark_pytorch(frames)
-    print(f"\nPyTorch      平均時間: {np.mean(pt_times):.1f}ms")
-    print(f"ONNX Runtime 平均時間: {np.mean(onnx_times):.1f}ms")
-    print(f"加速比: {np.mean(pt_times)/np.mean(onnx_times):.2f}x")
-    print(f"\nPyTorch      記憶體增量: {pt_mem:.1f}MB")
-    print(f"ONNX Runtime 記憶體增量: {onnx_mem:.1f}MB")
+    print(f"\nPyTorch      avg: {np.mean(pt_times):.1f}ms")
+    print(f"ONNX Runtime avg: {np.mean(onnx_times):.1f}ms")
+    print(f"Speedup: {np.mean(pt_times)/np.mean(onnx_times):.2f}x")
+    print(f"\nPyTorch      memory delta: {pt_mem:.1f}MB")
+    print(f"ONNX Runtime memory delta: {onnx_mem:.1f}MB")
     plot(onnx_times, pt_times, onnx_mem, pt_mem, len(frames))
 
 

@@ -51,7 +51,7 @@ This project uses Taipei City's public traffic cameras.
 4. Paste it into `.env` as `HLS_URL=...`
 
 Note: stream URLs contain a token and expire after some time.
-If the app logs "Unable to start streaming", re-extract a fresh URL.
+If the app logs "Failed to open stream", re-extract a fresh URL.
 
 ## Setup (Development)
 
@@ -71,7 +71,7 @@ docker compose -f docker-compose.dev.yml run -p 8001:8000 dev
 
 This drops you into a shell inside the container.
 
-Step 3. Inside the container, export the ONNX models. This only needs to run once.
+Step 3. Inside the container, export the ONNX model. This only needs to run once.
 
 ```bash
 mkdir -p models

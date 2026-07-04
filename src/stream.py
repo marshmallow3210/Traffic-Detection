@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 
 TAIPEI = timezone(timedelta(hours=8))
 LOCATION_NAME = os.environ.get("LOCATION_NAME", "Taipei Intersection")
-HLS_URL = os.environ.get("HLS_URL", "")  # 設定在 .env 或環境變數
+HLS_URL = os.environ.get("HLS_URL", "")  # set via .env or environment variable
 ONNX_PATH = "/app/models/yolov8s.onnx"
 INPUT_SIZE = (640, 640)
 THRESHOLD = 0.45
@@ -33,7 +33,7 @@ COLORS = {
 }
 
 app = FastAPI()
-state = {"frame": b"", "stats": "等待中...", "detections": [], "updated_at": None}
+state = {"frame": b"", "stats": "waiting...", "detections": [], "updated_at": None}
 
 def preprocess(frame_bgr):
     h, w = frame_bgr.shape[:2]
@@ -96,26 +96,26 @@ def draw_detections(frame_bgr, dets, ms):
     return out
 
 def inference_loop():
-    print("載入 YOLOv8s ONNX 模型...")
+    print("Loading YOLOv8s ONNX model...")
     session = ort.InferenceSession(ONNX_PATH, providers=["CPUExecutionProvider"])
     input_name = session.get_inputs()[0].name
-    print("模型載入完成！")
+    print("Model loaded.")
 
     while True:
         try:
-            print(f"連線到：{HLS_URL}")
+            print(f"Connecting to: {HLS_URL}")
             cap = cv2.VideoCapture(HLS_URL)
             if not cap.isOpened():
-                print("無法開啟串流，10 秒後重試...")
+                print("Failed to open stream, retrying in 10s...")
                 time.sleep(10)
                 continue
 
-            print("串流開始！")
+            print("Stream started.")
             frame_count = 0
             while True:
                 ret, frame_bgr = cap.read()
                 if not ret:
-                    print("串流中斷，重新連線...")
+                    print("Stream interrupted, reconnecting...")
                     break
 
                 frame_count += 1
@@ -136,12 +136,12 @@ def inference_loop():
 
                 summary = "  ".join(f"{k}:{v}" for k, v in counts.items())
                 ts = datetime.now(TAIPEI).strftime("%H:%M:%S")
-                print(f"[{ts}] {ms:.0f}ms | {summary or '無目標'}")
+                print(f"[{ts}] {ms:.0f}ms | {summary or 'no targets'}")
 
                 annotated = draw_detections(frame_bgr, dets, ms)
                 _, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 82])
                 state["frame"] = buf.tobytes()
-                state["stats"] = summary or "無目標"
+                state["stats"] = summary or "no targets"
                 state["detections"] = [
                     {"label": label, "confidence": round(conf, 3),
                     "box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}}
@@ -151,7 +151,7 @@ def inference_loop():
 
             cap.release()
         except Exception as e:
-            print(f"錯誤：{e}，10 秒後重試...")
+            print(f"Error: {e}, retrying in 10s...")
             time.sleep(10)
 
 @app.get("/feed")
@@ -183,7 +183,7 @@ def stats():
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return """
+    html = """
     <html>
     <head>
       <title>Traffic Detection Live</title>
@@ -196,7 +196,7 @@ def index():
       </style>
     </head>
     <body>
-      <h2>🚦 {LOCATION_NAME} 即時偵測 (YOLOv8s ONNX)</h2>
+      <h2>🚦 {LOCATION_NAME} Live Detection (YOLOv8s ONNX)</h2>
       <img id="feed" src="/feed"/>
       <div class="legend">
         <span class="dot" style="background:#00ff00"></span>person　
@@ -206,7 +206,7 @@ def index():
         <span class="dot" style="background:#ff0000"></span>truck　
         <span class="dot" style="background:#ff00ff"></span>bus
       </div>
-      <div id="stats">偵測中...</div>
+      <div id="stats">detecting...</div>
       <script>
         function refresh(){
           const img=new Image();
@@ -223,6 +223,7 @@ def index():
     </body>
     </html>
     """
+    return html.replace("{LOCATION_NAME}", LOCATION_NAME)
 
 if __name__ == "__main__":
     t = threading.Thread(target=inference_loop, daemon=True)
