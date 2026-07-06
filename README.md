@@ -4,7 +4,7 @@
 
 Real-time object detection on live Taipei city traffic camera streams using YOLOv8s ONNX Runtime, served via FastAPI and containerized with Docker.
 
-![detection demo](sample_images/demo.jpeg)
+![detection demo](sample_images/demo.jpg)
 
 ## Highlights
 
